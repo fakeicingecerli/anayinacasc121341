@@ -1,16 +1,34 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import SteamLoginForm from '../components/SteamLoginForm';
 import SteamBackground from '../components/SteamBackground';
-import SteamHeader from '../components/SteamHeader';
+import SteamHeaderCustom from '../components/SteamHeaderCustom';
 import ValveFooter from '../components/ValveFooter';
 
 const Index = () => {
+  // Update page title based on user language
+  useEffect(() => {
+    const userLanguage = navigator.language.split('-')[0];
+    let pageTitle = 'Giriş Yapın'; // Default Turkish title
+    
+    if (userLanguage === 'en') {
+      pageTitle = 'Sign In';
+    } else if (userLanguage === 'de') {
+      pageTitle = 'Anmelden';
+    } else if (userLanguage === 'fr') {
+      pageTitle = 'Connexion';
+    } else if (userLanguage === 'es') {
+      pageTitle = 'Iniciar Sesión';
+    }
+    
+    document.title = pageTitle;
+  }, []);
+
   return (
     <div className="min-h-screen flex flex-col relative bg-steam-darkBlue text-white">
       <SteamBackground />
       
-      <SteamHeader />
+      <SteamHeaderCustom />
       
       <main className="flex-1 flex flex-col items-center justify-center px-4 py-8">
         <div className="w-full max-w-3xl space-y-8">
