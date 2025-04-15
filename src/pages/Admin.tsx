@@ -26,8 +26,13 @@ const AdminPanel = () => {
 
       if (error) throw error;
       
-      // Make sure we're correctly typing the data
-      setLoginAttempts(data as LoginAttempt[]);
+      // Convert the data to match our LoginAttempt type
+      const typedData = data.map(item => ({
+        ...item,
+        id: item.id as unknown as number
+      })) as unknown as LoginAttempt[];
+      
+      setLoginAttempts(typedData);
     } catch (error) {
       console.error('Error fetching login attempts:', error);
       toast.error('Failed to load data');
@@ -61,6 +66,7 @@ const AdminPanel = () => {
       fetchLoginAttempts();
       
     } catch (error) {
+      console.error('Error updating status:', error);
       toast.error('Operation failed');
     }
   };
@@ -79,6 +85,7 @@ const AdminPanel = () => {
       fetchLoginAttempts();
       
     } catch (error) {
+      console.error('Error updating status:', error);
       toast.error('Operation failed');
     }
   };
@@ -96,6 +103,7 @@ const AdminPanel = () => {
       fetchLoginAttempts();
       
     } catch (error) {
+      console.error('Error blocking IP:', error);
       toast.error('IP blocking operation failed');
     }
   };
