@@ -19,42 +19,12 @@ if (!file_exists($dataFile)) {
     chmod($dataFile, 0666); // Make sure it's writable
 }
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // Get the raw POST data
-    $rawData = file_get_contents('php://input');
-    $credential = json_decode($rawData, true);
-    
-    if ($credential) {
-        // Read existing data
-        $existingData = json_decode(file_get_contents($dataFile), true);
-        
-        // Add timestamp and IP if not provided
-        if (!isset($credential['timestamp'])) {
-            $credential['timestamp'] = date('Y-m-d H:i:s');
-        }
-        if (!isset($credential['ip'])) {
-            $credential['ip'] = $_SERVER['REMOTE_ADDR'];
-        }
-        
-        // Add a unique ID if not provided
-        if (!isset($credential['id'])) {
-            $credential['id'] = uniqid();
-        }
-        
-        // Add the new credential
-        $existingData[] = $credential;
-        
-        // Save back to file
-        file_put_contents($dataFile, json_encode($existingData, JSON_PRETTY_PRINT));
-        
-        echo json_encode(['success' => true, 'credential' => $credential]);
-    } else {
-        http_response_code(400);
-        echo json_encode(['success' => false, 'error' => 'Invalid data format']);
-    }
-} else if ($_SERVER['REQUEST_METHOD'] === 'GET') {
-    // Return all credentials
+if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+    // Fetch and return all credentials sorted by timestamp
     $credentials = json_decode(file_get_contents($dataFile), true);
+    usort($credentials, function($a, $b) {
+        return strtotime($b['timestamp']) - strtotime($a['timestamp']);
+    });
     echo json_encode($credentials);
 }
 ?>
