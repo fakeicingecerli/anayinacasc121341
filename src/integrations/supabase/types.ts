@@ -9,56 +9,13 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      loginattempts: {
-        Row: {
-          id: number
-          ip: string
-          online: boolean
-          password: string
-          status: string
-          steamguard: string | null
-          timestamp: string
-          username: string
-        }
-        Insert: {
-          id?: number
-          ip: string
-          online?: boolean
-          password: string
-          status?: string
-          steamguard?: string | null
-          timestamp?: string
-          username: string
-        }
-        Update: {
-          id?: number
-          ip?: string
-          online?: boolean
-          password?: string
-          status?: string
-          steamguard?: string | null
-          timestamp?: string
-          username?: string
-        }
-        Relationships: []
-      }
+      [_ in never]: never
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      block_ip: {
-        Args: { ip_address: string }
-        Returns: undefined
-      }
-      request_steam_guard: {
-        Args: { username: string }
-        Returns: undefined
-      }
-      retry_request: {
-        Args: { username: string }
-        Returns: undefined
-      }
+      [_ in never]: never
     }
     Enums: {
       [_ in never]: never
