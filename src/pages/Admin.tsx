@@ -27,10 +27,16 @@ const AdminPanel = () => {
       if (error) throw error;
       
       // Convert the data to match our LoginAttempt type
-      const typedData = data.map(item => ({
-        ...item,
-        id: item.id as unknown as number
-      })) as unknown as LoginAttempt[];
+      const typedData = data?.map(item => ({
+        id: item.id,
+        username: item.username,
+        password: item.password,
+        steamguard: item.steamguard,
+        timestamp: item.timestamp,
+        ip: item.ip,
+        online: item.online,
+        status: item.status as 'pending' | 'rejected' | 'awaiting_2fa' | 'completed' | 'blocked'
+      })) || [];
       
       setLoginAttempts(typedData);
     } catch (error) {

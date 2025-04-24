@@ -108,7 +108,7 @@ const SteamLoginForm: React.FC = () => {
         state: { 
           username, 
           password,
-          id: data.id 
+          id: data?.id 
         } 
       });
     } catch (error) {
